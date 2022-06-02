@@ -111,4 +111,4 @@ jobs:
         echo "::set-output name=package_version::${{ env.PACKAGE_VERSION }}"
         echo "::set-output name=build_date::${{ env.BUILD_DATE }}"
   push:
-  
+  ## TODO: Would have to only build the image in previous step (without pushing) and access the builded image in the next job (that would be dependent of build and validate)
