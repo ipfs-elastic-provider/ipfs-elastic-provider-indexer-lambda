@@ -30,12 +30,8 @@ on:
 env:
   REGISTRY: ghcr.io
 jobs:
-  build:
+  validate:
     runs-on: ubuntu-latest
-    outputs:
-      image_repository: ${{ steps.setOutput.outputs.image_repository }}
-      package_version: ${{ steps.setOutput.outputs.package_version }}
-      build_date: ${{ steps.setOutput.outputs.build_date }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -45,15 +41,24 @@ jobs:
         node-version: 16.x
     - name: Install dependencies
       uses: bahmutov/npm-install@v1
+    - name: Test
+      run: npm test
+    - name: Lint code
+      run: npm run lint    
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      image_repository: ${{ steps.setOutput.outputs.image_repository }}
+      package_version: ${{ steps.setOutput.outputs.package_version }}
+      build_date: ${{ steps.setOutput.outputs.build_date }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3    
     - name: Set environment variables
       run: | 
         echo IMAGE_REPOSITORY=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
         echo PACKAGE_VERSION=$(cat package.json | jq -r '.version') >> $GITHUB_ENV
-        echo BUILD_DATE=$(date +%Y%m%d.%H%M) >> $GITHUB_ENV
-    - name: Test
-      run: npm test
-    - name: Lint code
-      run: npm run lint
+        echo BUILD_DATE=$(date +%Y%m%d.%H%M) >> $GITHUB_ENV    
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
     - name: Log in to GitHub Docker Registry
@@ -105,4 +110,5 @@ jobs:
       run: |
         echo "::set-output name=package_version::${{ env.PACKAGE_VERSION }}"
         echo "::set-output name=build_date::${{ env.BUILD_DATE }}"
+  push:
   
