@@ -153,7 +153,8 @@ t.test('queuedTasks', async t => {
 
     const result = await q.done()
 
-    t.ok(done < 6)
+    // must end at the second set of concurrent tasks
+    t.ok(done <= 6)
     t.same(result.error, new Error('BOOM'))
   })
 

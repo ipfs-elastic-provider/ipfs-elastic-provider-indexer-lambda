@@ -15,16 +15,27 @@ function now() {
  * stops at first error
  * does not throw error, return it on "done"
  */
-function queuedTasks({ concurrency = 1, onTaskComplete = noop } = {}) {
+function queuedTasks({ concurrency = 1, onTaskComplete } = {}) {
   const _queue = []
+  const taskCompleted = []
   let running = 0
   let error
 
   let _resolve
 
+  function _end () {
+    if (onTaskComplete) {
+      Promise.allSettled(taskCompleted).then(() => {
+        _resolve && _resolve({ error })
+      })
+      return
+    }
+    _resolve && _resolve({ error })
+  }
+
   function _done() {
     if (error) {
-      _resolve && _resolve({ error })
+      _end()
       return
     }
     if (_queue.length > 0) {
@@ -32,7 +43,7 @@ function queuedTasks({ concurrency = 1, onTaskComplete = noop } = {}) {
       return
     }
     if (running === 0) {
-      _resolve && _resolve({ error })
+      _end()
     }
   }
 
@@ -54,7 +65,7 @@ function queuedTasks({ concurrency = 1, onTaskComplete = noop } = {}) {
     running++
     try {
       const result = await f()
-      await onTaskComplete(result)
+      onTaskComplete && onTaskComplete(result)
     } catch (err) {
       error = err
     } finally {
@@ -72,8 +83,6 @@ function queuedTasks({ concurrency = 1, onTaskComplete = noop } = {}) {
 
   return { add, run, done }
 }
-
-function noop() {}
 
 module.exports = {
   now,
